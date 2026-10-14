@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { TipoProduto } from "../../types/types";
 
-// urll do web app configurada no .env
+// URL do web app configurada no .env
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function EditarProdutos() {
@@ -19,10 +19,13 @@ export default function EditarProdutos() {
     avatar: "",
   });
 
-  // nusca o produto pelo id utilizando o doGet do AppsScript com query string (?id=...)
+  // Busca o produto pelo id utilizando o doGet do Apps Script com query string (?id=...)
   useEffect(() => {
+    if (!id) return; // Garante que só executa se o id estiver presente na rota
+
     const carregarProduto = async () => {
       try {
+        console.log("Buscando ID:", id);
         const response = await fetch(`${API_URL}?id=${id}`);
 
         if (!response.ok) {
@@ -30,6 +33,7 @@ export default function EditarProdutos() {
         }
 
         const resultado = await response.json();
+        console.log("Resultado da API:", resultado);
 
         if (resultado.status === "error") {
           throw new Error(resultado.message);
@@ -37,14 +41,14 @@ export default function EditarProdutos() {
 
         setProduto(resultado.data);
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar produto:", error);
       }
     };
 
     carregarProduto();
   }, [id]);
 
-  // atualiza o produto enviando POST com ação PUT
+  // Atualiza o produto enviando POST com ação PUT
   const handleUpdate = async () => {
     try {
       const response = await fetch(API_URL, {
@@ -71,14 +75,14 @@ export default function EditarProdutos() {
       alert("Produto atualizado com sucesso!");
       navigate("/Produtos");
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao atualizar produto:", error);
     }
   };
 
   return (
     <main>
       <h2>Editar Produtos</h2>
-      <h1>{id}</h1>
+      <h1>ID: {id}</h1>
       <div>
         <form>
           <fieldset>
@@ -138,9 +142,11 @@ export default function EditarProdutos() {
                   setProduto({ ...produto, avatar: e.target.value })
                 }
               />
-              <figure>
-                <img src={produto.avatar} alt={produto.nome} width="100" />
-              </figure>
+              {produto.avatar && (
+                <figure>
+                  <img src={produto.avatar} alt={produto.nome} width="100" />
+                </figure>
+              )}
             </div>
             <div>
               <button type="button" onClick={() => handleUpdate()}>
