@@ -2,71 +2,78 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { TipoProduto } from "../../types/types";
 
+// urll do web app configurada no .env
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function EditarProdutos() {
-  // Para alterar o título da página:
   document.title = "Editar Produtos";
 
   const navigate = useNavigate();
-
   const { id } = useParams<{ id: string }>();
 
-  const [produto, setProduto] = useState<TipoProduto>({ id: "", nome: "", preco: 0, descricao: "", avatar: "" });
+  const [produto, setProduto] = useState<TipoProduto>({
+    id: "",
+    nome: "",
+    preco: 0,
+    estoque: 0,
+    avatar: "",
+  });
 
+  // nusca o produto pelo id utilizando o doGet do AppsScript com query string (?id=...)
   useEffect(() => {
-
-    const carregaProduto = async () => {
-
+    const carregarProduto = async () => {
       try {
-        // const response = await fetch("http://localhost:3001/produtos/"+id);
-        const response = await fetch(`http://localhost:3001/produtos/${id}`);
+        const response = await fetch(`${API_URL}?id=${id}`);
 
-        //TRATAMENTO DE ERRO
         if (!response.ok) {
-          throw new Error(
-            `Erro na listagem dos produtos: ${response.status} - ${response.statusText}`,
-          );
+          throw new Error(`Erro na recuperação: ${response.status}`);
         }
 
-        //SUCESSO
-        const data: TipoProduto = await response.json();
-        setProduto(data);
+        const resultado = await response.json();
 
+        if (resultado.status === "error") {
+          throw new Error(resultado.message);
+        }
+
+        setProduto(resultado.data);
       } catch (error) {
         console.error(error);
       }
     };
 
-    carregaProduto();
+    carregarProduto();
+  }, [id]);
 
-  }, []);
-
+  // atualiza o produto enviando POST com ação PUT
   const handleUpdate = async () => {
     try {
-
-      const response = await fetch(`http://localhost:3001/produtos/${produto.id}`, {
-        method: "PUT",
+      const response = await fetch(API_URL, {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "text/plain;charset=utf-8",
         },
-        body: JSON.stringify(produto)
+        body: JSON.stringify({
+          action: "PUT",
+          ...produto,
+        }),
       });
 
-      //ERRO
       if (!response.ok) {
-        throw new Error(
-          `Erro na atualização do produto: ${response.status} - ${response.statusText}`,
-        );
+        throw new Error(`Erro na atualização: ${response.status}`);
       }
 
-      //SUCESSO
-      alert("Produto atualizado com sucesso!");
-      //REDIRECT
-      navigate("/produtos");
+      const resultado = await response.json();
 
+      if (resultado.status === "error") {
+        throw new Error(resultado.message);
+      }
+
+      alert("Produto atualizado com sucesso!");
+      navigate("/Produtos");
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 
   return (
     <main>
@@ -78,24 +85,67 @@ export default function EditarProdutos() {
             <legend>Dados do produto:</legend>
             <div>
               <label htmlFor="nome">Nome do produto </label>
-              <input type="text" name="nome" id="nome" value={produto.nome} onChange={(e) => setProduto({ ...produto, nome: e.target.value })} />
+              <input
+                type="text"
+                name="nome"
+                id="nome"
+                value={produto.nome}
+                onChange={(e) =>
+                  setProduto({ ...produto, nome: e.target.value })
+                }
+              />
             </div>
             <div>
               <label htmlFor="preco">Preço do produto </label>
-              <input type="number" step={0.1} name="preco" id="preco" value={produto.preco} onChange={(e) => setProduto({ ...produto, preco: parseFloat(e.target.value) })} />
+              <input
+                type="number"
+                step={0.1}
+                name="preco"
+                id="preco"
+                value={produto.preco}
+                onChange={(e) =>
+                  setProduto({
+                    ...produto,
+                    preco: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
             </div>
             <div>
-              <label htmlFor="descricao">Descrição do produto </label>
-              <input type="text" name="descricao" id="descricao" value={produto.descricao} onChange={(e) => setProduto({ ...produto, descricao: e.target.value })} />
+              <label htmlFor="estoque">Estoque do produto </label>
+              <input
+                type="number"
+                step={1}
+                name="estoque"
+                id="estoque"
+                value={produto.estoque}
+                onChange={(e) =>
+                  setProduto({
+                    ...produto,
+                    estoque: parseInt(e.target.value) || 0,
+                  })
+                }
+              />
             </div>
             <div>
-              <label htmlFor="avatar">Avatar do produto </label>
+              <label htmlFor="avatar">URL do Avatar </label>
+              <input
+                type="url"
+                name="avatar"
+                id="avatar"
+                value={produto.avatar}
+                onChange={(e) =>
+                  setProduto({ ...produto, avatar: e.target.value })
+                }
+              />
               <figure>
-                <img src={produto.avatar} alt={produto.nome} />
+                <img src={produto.avatar} alt={produto.nome} width="100" />
               </figure>
             </div>
             <div>
-              <button type="button" onClick={() => handleUpdate()}>ATUALIZAR</button>
+              <button type="button" onClick={() => handleUpdate()}>
+                ATUALIZAR
+              </button>
             </div>
           </fieldset>
         </form>

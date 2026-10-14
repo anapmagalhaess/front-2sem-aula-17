@@ -2,6 +2,6 @@ export type TipoProduto = {
     id: string;
     nome: string;
     preco: number;
-    descricao: string;
+    estoque: number;
     avatar: string;
-} 
+};
